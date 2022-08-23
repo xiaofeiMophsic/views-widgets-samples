@@ -16,15 +16,14 @@
 
 package androidx.viewpager2.integration.testapp
 
+import android.content.Intent
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
-import androidx.fragment.app.Fragment
-import androidx.viewpager2.adapter.FragmentStateAdapter
+import android.util.Log
+import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.commit
+import androidx.lifecycle.coroutineScope
 
-import androidx.viewpager2.integration.testapp.cards.Card
-import androidx.viewpager2.integration.testapp.cards.CardView
+import kotlinx.coroutines.launch
 
 /**
  * Shows how to use a [androidx.viewpager2.widget.ViewPager2] with Fragments, via a
@@ -33,41 +32,44 @@ import androidx.viewpager2.integration.testapp.cards.CardView
  * @see CardViewActivity for an example of using {@link androidx.viewpager2.widget.ViewPager2} with
  * Views.
  */
-class CardFragmentActivity : BaseCardActivity() {
+class CardFragmentActivity : FragmentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        viewPager.adapter = object : FragmentStateAdapter(this) {
-            override fun createFragment(position: Int): Fragment {
-                return CardFragment.create(Card.DECK[position])
-            }
+        setContentView(R.layout.activity_no_tablayout_fragment)
 
-            override fun getItemCount(): Int {
-                return Card.DECK.size
+        lifecycle.coroutineScope.launch {
+            supportFragmentManager.findFragmentByTag(PARENT_FRAGMENT_TAG) ?: run {
+                val parentFragment = ParentFragment()
+                supportFragmentManager.commit {
+                    replace(
+                        R.id.view_pager_container,
+                        parentFragment,
+                        PARENT_FRAGMENT_TAG
+                    )
+                }
             }
         }
     }
 
-    class CardFragment : Fragment() {
-        override fun onCreateView(
-            inflater: LayoutInflater,
-            container: ViewGroup?,
-            savedInstanceState: Bundle?
-        ): View? {
-            val cardView = CardView(layoutInflater, container)
-            cardView.bind(Card.fromBundle(arguments!!))
-            return cardView.view
-        }
-
-        companion object {
-
-            /** Creates a Fragment for a given [Card]  */
-            fun create(card: Card): CardFragment {
-                val fragment = CardFragment()
-                fragment.arguments = card.toBundle()
-                return fragment
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        intent ?.let {
+            val stringExtra = intent.getStringExtra(OtherActivity.EXTRA_NAME)
+            Log.d("CardFragmentActivity", "onNewIntent: $stringExtra")
+            val parentFragment = supportFragmentManager.findFragmentByTag(PARENT_FRAGMENT_TAG)
+            stringExtra?.let {
+                (parentFragment as ParentFragment).onNewIntent(stringExtra)
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+    }
+
+    companion object {
+        const val PARENT_FRAGMENT_TAG = "PARENT_FRAGMENT"
     }
 }

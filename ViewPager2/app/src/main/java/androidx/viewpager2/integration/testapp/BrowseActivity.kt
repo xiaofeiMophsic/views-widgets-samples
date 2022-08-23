@@ -64,6 +64,7 @@ class BrowseActivity : ListActivity() {
     private fun activityToIntent(activity: String): Intent =
             Intent(Intent.ACTION_VIEW).setClassName(this.packageName, activity)
 
+    @Deprecated("Deprecated in Java")
     override fun onListItemClick(listView: ListView, view: View, position: Int, id: Long) {
         val map = listView.getItemAtPosition(position) as Map<*, *>
 
